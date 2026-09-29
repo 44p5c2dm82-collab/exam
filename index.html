@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Examen de Desarrollo Infantil</title>
+<style>
+:root{--bg:#eef2f7;--card:#fff;--tx:#1f2937;--mut:#6b7280;--pri:#2f5fd0;--ok:#22a05a;--okb:#dff5e8;--bad:#d64545;--badb:#fde3e3;--bd:#d5dbe5}
+@media (prefers-color-scheme:dark){:root{--bg:#141922;--card:#1f2632;--tx:#e8ecf3;--mut:#9aa5b5;--pri:#6b93f0;--ok:#3fbf7a;--okb:#173a2a;--bad:#ef6a6a;--badb:#402022;--bd:#354052}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:20px}
+.card{background:var(--card);width:100%;max-width:720px;border-radius:16px;padding:28px;box-shadow:0 6px 24px rgba(0,0,0,.1);align-self:flex-start}
+h1{margin:0 0 6px;font-size:1.5rem}
+.sub{color:var(--mut);margin:0 0 20px}
+.top{display:flex;justify-content:space-between;color:var(--mut);font-size:.9rem;margin-bottom:8px}
+.bar{height:8px;background:var(--bd);border-radius:8px;overflow:hidden;margin-bottom:24px}
+.bar i{display:block;height:100%;width:0;background:var(--pri);transition:width .3s}
+.q{font-size:1.2rem;font-weight:600;line-height:1.4;margin:0 0 18px}
+.opt{display:flex;gap:12px;align-items:center;width:100%;text-align:left;font:inherit;color:var(--tx);background:var(--card);border:2px solid var(--bd);border-radius:12px;padding:13px 14px;margin-bottom:10px;cursor:pointer;transition:.15s}
+.opt:hover:not(:disabled){border-color:var(--pri);background:var(--bg)}
+.opt b{flex:none;width:32px;height:32px;border-radius:50%;background:var(--bg);display:grid;place-items:center;font-size:.9rem}
+.opt:disabled{cursor:default}
+.opt.ok{background:var(--okb);border-color:var(--ok)}
+.opt.ok b{background:var(--ok);color:#fff}
+.opt.bad{background:var(--bad);border-color:var(--bad);color:#fff}
+.opt.bad b{background:#fff;color:var(--bad)}
+.opt.sel-ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.opt.sel-ok b{background:#fff;color:var(--ok)}
+.fb{min-height:24px;font-weight:600;margin:6px 0 14px}
+.fb.ok{color:var(--ok)}.fb.bad{color:var(--bad)}
+.btn{background:var(--pri);color:#fff;border:0;border-radius:10px;padding:12px 22px;font:inherit;font-weight:600;cursor:pointer}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.row{display:flex;justify-content:flex-end}
+.res{text-align:center}
+.big{font-size:3.2rem;font-weight:700;color:var(--pri);margin:8px 0}
+.stats{display:flex;gap:12px;justify-content:center;margin:18px 0}
+.stats div{flex:1;border-radius:12px;padding:14px;font-weight:600}
+.stats .a{background:var(--okb);color:var(--ok)}.stats .b{background:var(--badb);color:var(--bad)}
+.stats span{display:block;font-size:2rem}
+.hide{display:none}
+</style>
+</head>
+<body>
+<div class="card">
+  <div id="start">
+    <h1>Examen de Desarrollo Infantil</h1>
+    <p class="sub">Basado únicamente en tus diapositivas y tus apuntes. Elige una respuesta por pregunta: verás al instante si es correcta.</p>
+    <p id="count" class="sub"></p>
+    <button class="btn" onclick="begin()">Comenzar examen</button>
+  </div>
+  <div id="quiz" class="hide">
+    <div class="top"><span id="num"></span><span id="score"></span></div>
+    <div class="bar"><i id="prog"></i></div>
+    <p class="q" id="q"></p>
+    <div id="opts"></div>
+    <div class="fb" id="fb"></div>
+    <div class="row"><button class="btn" id="next" onclick="next()" disabled>Siguiente</button></div>
+  </div>
+  <div id="end" class="hide res">
+    <h1>Resultado final</h1>
+    <div class="big" id="pct"></div>
+    <p id="msg" class="sub"></p>
+    <div class="stats"><div class="a"><span id="ok"></span>Correctas</div><div class="b"><span id="ko"></span>Incorrectas</div></div>
+    <button class="btn" onclick="begin()">Repetir examen</button>
+  </div>
+</div>
+<script>
+// Formato: [pregunta, RESPUESTA CORRECTA, incorrecta, incorrecta, incorrecta]  (las opciones se mezclan al azar)
+const Q=[
+["¿Cuándo comienzan los procesos del desarrollo?","En la concepción, cuando un espermatozoide penetra el óvulo","Al implantarse el cigoto en el útero","Al formarse el tubo neural","Al nacer el bebé"],
+["¿Hasta cuándo continúa el proceso de cambio del desarrollo humano?","Durante toda la vida","Hasta la adolescencia","Hasta la adultez temprana","Hasta los 10 años"],
+["¿Qué es el periodo prenatal?","El tiempo entre la concepción y el nacimiento","El tiempo entre el nacimiento y los 3 años","Las dos primeras semanas de gestación","El tiempo entre la implantación y la octava semana"],
+["¿Qué ocurre en la fecundación según el material?","Un espermatozoide penetra el óvulo y lo fertiliza","El cigoto se anida en la pared uterina","El embrión forma tres capas de células","El feto comienza a formar párpados y uñas"],
+["¿Cuál es la secuencia de fases mostrada tras la fecundación?","Cigoto, dos células, cuatro células, mórula y blástula","Cigoto, dos células, mórula, cuatro células y blástula","Cigoto, cuatro células, dos células, blástula y mórula","Óvulo, dos células, cuatro células, mórula y feto"],
+["¿Cómo crea nuevas células el cigoto al desplazarse por la trompa de Falopio?","Mitosis","Neurulación","Lateralización","Gastrulación"],
+["¿Cuántas células tiene el cigoto al llegar al útero (unos 4 días)?","Entre 60 y 70","Entre 2 y 4","Entre 10 y 20","Más de 200"],
+["¿En qué se convertirá el borde externo del cigoto?","En el embrión","En la placenta","En el cordón umbilical","En el saco amniótico"],
+["¿Qué estructuras protegen y nutren al embrión?","Placenta, cordón umbilical y saco amniótico","Placenta, tubo neural y saco amniótico","Cordón umbilical, mórula y placenta","Saco amniótico, cresta neural y cordón umbilical"],
+["¿En cuántas etapas se divide el periodo prenatal?","Tres: germinal, embrionaria y fetal","Dos: germinal y fetal","Cuatro: germinal, embrionaria, fetal y neonatal","Cinco: cigótica, germinal, embrionaria, fetal y postnatal"],
+["¿Cuánto dura la etapa germinal?","De la fertilización a 2 semanas","De 2 a 8 semanas","De 8 semanas al nacimiento","Los primeros 4 días"],
+["¿Qué etapa va de 2 a 8 semanas y es crítica por la vulnerabilidad del embrión?","Embrionaria","Germinal","Fetal","Neonatal"],
+["¿Qué etapa va de las 8 semanas hasta el nacimiento?","Fetal","Embrionaria","Germinal","Postnatal"],
+["¿Cuáles son las tres capas germinales, de la interna a la externa?","Endodermo, mesodermo y ectodermo","Ectodermo, mesodermo y endodermo","Mesodermo, endodermo y ectodermo","Endodermo, ectodermo y mesodermo"],
+["¿En qué se convierte el ectodermo (capa externa)?","Sistema nervioso y piel","Esqueleto y músculos","Aparato digestivo y órganos vitales","Sistema respiratorio y genitourinario"],
+["¿En qué se convierte el mesodermo (capa intermedia)?","Esqueleto y músculos","Sistema nervioso y piel","Aparato digestivo y órganos vitales","Epidermis y corazón"],
+["¿En qué se convierte el endodermo (capa interna)?","Aparato digestivo y órganos vitales","Esqueleto y músculos","Sistema nervioso y piel","Piel y tejido conectivo"],
+["Según tus apuntes, ¿qué sistemas derivan del endodermo?","Respiratorio, genitourinario y digestivo","Respiratorio, muscular y digestivo","Nervioso, genitourinario y digestivo","Digestivo, esquelético y respiratorio"],
+["Según tus apuntes, ¿qué deriva del mesodermo?","Músculo esquelético y tejido conectivo","Epidermis y sistema nervioso","Sistema respiratorio y digestivo","Músculo esquelético y epidermis"],
+["Según tus apuntes, ¿qué deriva del ectodermo?","Epidermis y sistema nervioso","Músculo esquelético y conectivo","Genitourinario y digestivo","Epidermis y sistema respiratorio"],
+["¿A partir de qué capa se forma el tubo neural (neurulación)?","Ectodermo","Mesodermo","Endodermo","Blastocito"],
+["¿En qué semana inicia el sistema nervioso embrionario (días 18-24)?","Tercera semana","Primera semana","Sexta semana","Octava semana"],
+["¿Qué se empieza a formar en las semanas tercera y cuarta?","El corazón y el tubo neural","Los párpados y las uñas","Las papilas gustativas y el cabello","Los dientes y los oídos"],
+["¿Cuándo ocurre la diferenciación sexual?","Entre las semanas sexta y octava","Entre las semanas primera y segunda","Entre las semanas tercera y cuarta","En el quinto mes"],
+["¿Qué se forma durante el periodo fetal?","Párpados, uñas, papilas gustativas y cabello","Corazón, hígado y sistema digestivo","Placenta, cordón y saco amniótico","Tubo neural y cresta neural"],
+["¿Qué significa el principio cefalocaudal?","El crecimiento ocurre de arriba hacia abajo","El crecimiento ocurre de dentro hacia afuera","El crecimiento ocurre de abajo hacia arriba","El crecimiento ocurre de afuera hacia adentro"],
+["¿Qué significa el principio próximo-distal?","El desarrollo ocurre de dentro hacia afuera","El desarrollo ocurre de arriba hacia abajo","El desarrollo ocurre de afuera hacia adentro","El desarrollo ocurre de abajo hacia arriba"],
+["¿Por qué la cabeza del recién nacido es grande en proporción?","Porque el encéfalo crece con rapidez antes del nacimiento","Porque el tronco crece más lento en el útero","Porque los brazos se forman después","Porque el cerebelo madura al nacer"],
+["Según el principio próximo-distal, ¿qué se desarrolla antes en el vientre?","Cabeza y tronco, antes que brazos y piernas","Dedos, antes que brazos","Piernas, antes que el tronco","Manos y pies, antes que la cabeza"],
+["¿Cuál es la función del tallo cerebral?","Respiración, frecuencia cardiaca, temperatura y ciclo sueño-vigilia","Equilibrio y coordinación motriz","Lenguaje y razonamiento lógico","Unir los dos hemisferios"],
+["¿Qué parte del encéfalo mantiene el equilibrio y la coordinación motriz?","Cerebelo","Tallo cerebral","Cuerpo calloso","Corteza cerebral"],
+["¿Cuáles son las principales partes del cerebro descritas en la clase?","Tallo cerebral, cerebelo, cerebro, cuerpo calloso y corteza cerebral","Tallo cerebral, cerebelo, cerebro, cuerpo calloso y axón","Tallo cerebral, cerebelo, cerebro, soma y corteza cerebral","Cerebelo, cerebro, cuerpo calloso, corteza cerebral y mesodermo"],
+["¿Cómo se llama la especialización de los hemisferios cerebrales?","Lateralización","Neurulación","Mitosis","Sinapsis"],
+["¿De qué se ocupa principalmente el hemisferio izquierdo?","Lenguaje y razonamiento lógico","Funciones visuales y espaciales","Equilibrio y coordinación","Funciones orgánicas básicas"],
+["¿De qué se ocupa el hemisferio derecho?","Funciones visuales y espaciales","Lenguaje y razonamiento lógico","Respiración y temperatura","Memoria y pensamiento abstracto"],
+["¿Cuál es la función del cuerpo calloso?","Unir los dos hemisferios para intercambiar información","Mantener el equilibrio","Regular la respiración","Gobernar la vista y el oído"],
+["¿Cuáles son los cuatro lóbulos del cerebro?","Frontal, parietal, occipital y temporal","Frontal, parietal, occipital y cerebeloso","Frontal, temporal, occipital y calloso","Parietal, occipital, temporal y bulbar"],
+["¿Qué lóbulo es el más grande, el último en desarrollarse y controla pensamiento y conciencia?","Lóbulo frontal","Lóbulo temporal","Lóbulo occipital","Lóbulo parietal"],
+["¿Cuáles son los tipos de neuronas del material?","Multipolar, bipolar y unipolar","Multipolar, bipolar y tripolar","Unipolar, bipolar y sensorial","Multipolar, motora y unipolar"],
+["¿Qué neurona tiene un solo axón y diversas ramificaciones dendríticas?","Multipolar","Bipolar","Unipolar","Sensorial"],
+["¿Qué neurona tiene dos prolongaciones (axón y una dendrita) y suele ser sensorial?","Bipolar","Multipolar","Unipolar","Motora"],
+["¿Cómo se llama el cuerpo celular de la neurona?","Soma","Axón","Dendrita","Mielina"],
+["¿Cuándo comienza el crecimiento encefálico importante para el funcionamiento neurológico?","En el tercer trimestre de gestación, hasta al menos el cuarto año","En la tercera semana, hasta el nacimiento","Al nacer, hasta los 10 años","En el segundo mes, hasta los 6 meses"],
+["¿Cuáles son los tres ámbitos del desarrollo humano?","Físico, cognoscitivo y psicosocial","Físico, emocional y social","Cognoscitivo, motor y afectivo","Biológico, psicosocial y cultural"],
+["¿Qué incluye el desarrollo psicosocial?","Emociones, personalidad y relaciones sociales","Aprendizaje, atención y memoria","Crecimiento del cuerpo y habilidades motoras","Lenguaje, pensamiento y razonamiento"],
+["¿Qué incluye el desarrollo cognoscitivo?","Aprendizaje, atención, memoria, lenguaje, pensamiento, razonamiento y creatividad","Emociones, personalidad y relaciones sociales","Crecimiento del cuerpo, sentidos y salud","Apego, autoconcepto y amistades"],
+["¿Qué responde la investigación cuantitativa?","¿Cuánto? y ¿cuántos?, con datos numéricos","El cómo y el porqué, con descripciones no numéricas","Solo creencias subjetivas de los participantes","Únicamente descripciones pictóricas"],
+["Según Freud, ¿cuáles son las tres partes de la personalidad?","Ello, yo y superyó","Yo, conciencia y superyó","Ello, yo y autoconcepto","Ello, superyó e identidad"],
+["¿Cuáles son las etapas del desarrollo psicosexual de Freud?","Oral, anal, fálica, latencia y genital","Oral, anal, fálica, genital y edípica","Sensorial, anal, fálica, latencia y genital","Oral, anal, latencia, moral y genital"],
+["¿Cuál es la primera etapa de Erikson (nacimiento a 12-18 meses)?","Confianza vs. desconfianza","Autonomía vs. vergüenza y duda","Iniciativa vs. culpa","Laboriosidad vs. inferioridad"],
+["¿Qué etapa de Erikson corresponde de 3 a 6 años?","Iniciativa vs. culpa","Autonomía vs. vergüenza y duda","Laboriosidad vs. inferioridad","Identidad vs. confusión de identidad"],
+["¿Quién propuso la teoría del aprendizaje social (cognoscitiva social)?","Albert Bandura","Lev Vygotsky","B. F. Skinner","Urie Bronfenbrenner"],
+["¿Qué teoría es de Urie Bronfenbrenner?","Teoría bioecológica","Teoría del apego","Teoría sociocultural","Teoría psicosexual"],
+["¿Quién es el autor de la teoría del apego?","J. Bowlby","E. O. Wilson","Jean Piaget","Erik Erikson"]
+];
+const $=id=>document.getElementById(id);
+const sh=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+let list,i,ok,ko,done;
+$("count").textContent=Q.length+" preguntas de opción múltiple.";
+function show(id){["start","quiz","end"].forEach(x=>$(x).classList.toggle("hide",x!==id))}
+function begin(){list=sh(Q);i=0;ok=0;ko=0;show("quiz");render()}
+function render(){
+  const q=list[i];done=false;
+  $("num").textContent="Pregunta "+(i+1)+" de "+list.length;
+  $("score").textContent="✔ "+ok+"   ✘ "+ko;
+  $("prog").style.width=(i/list.length*100)+"%";
+  $("q").textContent=q[0];
+  $("fb").textContent="";$("fb").className="fb";
+  $("next").disabled=true;
+  $("next").textContent=i===list.length-1?"Ver resultado":"Siguiente";
+  const o=$("opts");o.innerHTML="";
+  sh(q.slice(1)).forEach((t,k)=>{
+    const b=document.createElement("button");b.className="opt";
+    b.innerHTML="<b>"+"ABCD"[k]+"</b><span></span>";b.lastChild.textContent=t;
+    b.onclick=()=>pick(b,t===q[1]);
+    b.dataset.c=t===q[1]?1:0;o.appendChild(b)});
+}
+function pick(b,right){
+  if(done)return;done=true;
+  document.querySelectorAll(".opt").forEach(x=>{x.disabled=true;if(x.dataset.c==="1")x.classList.add("ok")});
+  if(right){ok++;b.classList.remove("ok");b.classList.add("sel-ok");$("fb").textContent="¡Correcto!";$("fb").className="fb ok"}
+  else{ko++;b.classList.add("bad");$("fb").textContent="Incorrecto. La respuesta correcta está en verde.";$("fb").className="fb bad"}
+  $("score").textContent="✔ "+ok+"   ✘ "+ko;
+  $("next").disabled=false;
+}
+function next(){
+  if(i<list.length-1){i++;render();return}
+  const p=Math.round(ok/list.length*100);
+  $("pct").textContent=p+"%";$("ok").textContent=ok;$("ko").textContent=ko;
+  $("msg").textContent=ok+" de "+list.length+" respuestas correctas. "+(p>=90?"¡Excelente dominio del tema!":p>=70?"Buen nivel, repasa lo que fallaste.":p>=50?"Vas a la mitad, conviene repasar más.":"Necesitas repasar el material con calma.");
+  show("end");
+}
+</script>
+</body>
+</html>
